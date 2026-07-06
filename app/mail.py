@@ -19,7 +19,7 @@ def send_email_report(html_content: str) -> bool:
     # 2. 建立郵件訊息
     msg = MIMEMultipart("alternative")
     today_str = datetime.now().strftime("%Y-%m-%d")
-    msg["Subject"] = f"[AI Stock Agent] 投資組合評估與分析建議報告 - {today_str}"
+    msg["Subject"] = f"[AI Stock Agent] 短線個股風險評估報告 - {today_str}"
     msg["From"] = config.SMTP_USER
     msg["To"] = config.RECIPIENT_EMAIL
     
