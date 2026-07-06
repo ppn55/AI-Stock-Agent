@@ -1,0 +1,10 @@
+pandas==3.0.3
+yfinance
+openai
+python-dotenv
+jinja2
+requests
+markdown
+
+
+
