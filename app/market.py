@@ -50,6 +50,46 @@ def _try_download_with_fallback(ticker: str) -> Tuple[str, pd.DataFrame]:
     return primary, pd.DataFrame()
 
 
+def patch_latest_row_with_fast_info(df: pd.DataFrame, ticker: str) -> pd.DataFrame:
+    """
+    使用 fast_info 來修補 DataFrame 最後一筆若為 NaN 的交易日數值 (如盤後尚未結算的暫存空行)。
+    """
+    if df.empty:
+        return df
+        
+    last_row = df.iloc[-1]
+    # 若最後一筆 Close 為 NaN，則嘗試用 fast_info 補值
+    if pd.isna(last_row['Close']) or pd.isna(last_row['Open']):
+        try:
+            stock = yf.Ticker(ticker)
+            fast = stock.fast_info
+            
+            last_price = fast.get('lastPrice')
+            open_price = fast.get('open')
+            high_price = fast.get('dayHigh')
+            low_price = fast.get('dayLow')
+            volume = fast.get('lastVolume')
+            
+            if last_price is not None and not pd.isna(last_price):
+                idx = df.index[-1]
+                df.at[idx, 'Close'] = float(last_price)
+                if open_price is not None and not pd.isna(open_price):
+                    df.at[idx, 'Open'] = float(open_price)
+                if high_price is not None and not pd.isna(high_price):
+                    df.at[idx, 'High'] = float(high_price)
+                if low_price is not None and not pd.isna(low_price):
+                    df.at[idx, 'Low'] = float(low_price)
+                if volume is not None and not pd.isna(volume):
+                    df.at[idx, 'Volume'] = float(volume)
+                print(f"  -> 成功使用 fast_info 修補 {ticker} 的最新一筆 K 線數據 (收盤價: {last_price:.2f})")
+        except Exception as e:
+            print(f"  -> 嘗試修補 {ticker} 數據時發生錯誤: {e}")
+            
+    # 最後再把可能仍有其他 NaN 的列濾除
+    df = df.dropna(subset=['Close'])
+    return df
+
+
 def download_stock_data(tickers: List[str]) -> Dict[str, pd.DataFrame]:
     """
     下載指定股票清單的近 200 筆交易日 K 線數據，支援自動校正台灣股市代號尾碼。
@@ -72,10 +112,10 @@ def download_stock_data(tickers: List[str]) -> Dict[str, pd.DataFrame]:
                 print(f"警告: 股票 {ticker} (含備用代號) 未獲取到任何歷史數據。")
                 continue
             
-            # 過濾掉收盤價為 NaN 的無效列（避開盤後 yfinance 的 placeholder 空列）
-            df = df.dropna(subset=['Close'])
+            # 使用 fast_info 修補當日可能為 NaN 的收盤行，避免數據落後一天
+            df = patch_latest_row_with_fast_info(df, actual_ticker)
             if df.empty:
-                print(f"警告: 股票 {ticker} 過濾空列後無數據。")
+                print(f"警告: 股票 {ticker} 修補並過濾空列後無數據。")
                 continue
             
             # 排序並取最後的 200 筆交易日數據
