@@ -203,7 +203,7 @@
                     <tbody>
                         {% for holding in holdings %}
                         <tr>
-                            <td><strong>{{ holding.ticker }}</strong><br><span style="font-size:11px; color:#64748b;">{{ holding.name }}</span></td>
+                            <td><strong>{{ holding.ticker | replace('.', ' ') }}</strong><br><span style="font-size:11px; color:#64748b;">{{ holding.name }}</span></td>
                             <td>{{ "{:,}".format(holding.shares) }}</td>
                             <td>{{ "{:,.0f}".format(holding.cost) }}</td>
                             <td>{{ "{:,.2f}".format(holding.price) }}</td>
@@ -239,7 +239,7 @@
                         {% for holding in holdings %}
                         {% set ind = indicators[holding.ticker] %}
                         <tr>
-                            <td><strong>{{ holding.ticker }}</strong><br><span style="font-size:11px; color:#64748b;">{{ holding.name }}</span></td>
+                            <td><strong>{{ holding.ticker | replace('.', ' ') }}</strong><br><span style="font-size:11px; color:#64748b;">{{ holding.name }}</span></td>
                             <td>{{ "{:,.2f}".format(holding.price) }}</td>
                             <td>
                                 {% if ind.MA20 and ind.MA60 %}
