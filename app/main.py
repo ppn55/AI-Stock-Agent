@@ -46,7 +46,7 @@ def run_daily_analysis() -> bool:
         # 2. 下載個股市場行情數據
         print("\n[Step 2] 正在下載市場行情與 200 天 K 線...")
         k_data = download_stock_data(tickers)
-        latest_prices = get_latest_prices(tickers)
+        latest_prices = get_latest_prices(tickers, downloaded_data=k_data)
         
         # 3. 計算技術指標與投資組合分析
         print("\n[Step 3] 正在計算技術分析指標與投資組合損益...")

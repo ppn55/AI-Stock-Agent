@@ -198,6 +198,8 @@
                             <th>目前市值</th>
                             <th>未實現損益 (報酬率)</th>
                             <th>投組佔比</th>
+                            <th>信心指數</th>
+                            <th>評分</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -213,6 +215,14 @@
                                 <span style="font-size:11px;">{{ "{:+.2f}%".format(holding.return_rate) }}</span>
                             </td>
                             <td>{{ "{:.2f}%".format(holding.ratio) }}</td>
+                            {% set ind = indicators[holding.ticker] %}
+                            <td style="color: #f59e0b; font-size: 13px;">{{ ind.stars }}</td>
+                            <td>
+                                <span class="{% if ind.score >= 70 %}text-up{% elif ind.score <= 45 %}text-down{% endif %}" style="font-weight: 700; font-size: 15px;">
+                                    {{ ind.score }}
+                                </span>
+                                <span style="font-size: 11px; color: #64748b;">/ 100</span>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

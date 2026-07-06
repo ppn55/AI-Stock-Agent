@@ -72,6 +72,12 @@ def download_stock_data(tickers: List[str]) -> Dict[str, pd.DataFrame]:
                 print(f"警告: 股票 {ticker} (含備用代號) 未獲取到任何歷史數據。")
                 continue
             
+            # 過濾掉收盤價為 NaN 的無效列（避開盤後 yfinance 的 placeholder 空列）
+            df = df.dropna(subset=['Close'])
+            if df.empty:
+                print(f"警告: 股票 {ticker} 過濾空列後無數據。")
+                continue
+            
             # 排序並取最後的 200 筆交易日數據
             df = df.sort_index()
             if len(df) > 200:
@@ -112,9 +118,13 @@ def get_latest_prices(tickers: List[str], downloaded_data: Dict[str, pd.DataFram
         try:
             actual_ticker, df = _try_download_with_fallback(ticker)
             if not df.empty:
-                latest_price = float(df['Close'].iloc[-1])
-                prices[ticker] = latest_price
-                print(f"{ticker} 最新收盤價: {latest_price:.2f}")
+                df = df.dropna(subset=['Close'])
+                if not df.empty:
+                    latest_price = float(df['Close'].iloc[-1])
+                    prices[ticker] = latest_price
+                    print(f"{ticker} 最新收盤價: {latest_price:.2f}")
+                else:
+                    print(f"錯誤: {ticker} 過濾空列後無價格數據")
             else:
                 print(f"錯誤: 無法獲取 {ticker} 的最新收盤價")
         except Exception as e:

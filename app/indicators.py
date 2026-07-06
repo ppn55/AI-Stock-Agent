@@ -4,7 +4,9 @@ from typing import Dict, Any
 
 
 def calculate_ma(df: pd.DataFrame) -> pd.DataFrame:
-    """計算 MA20 與 MA60"""
+    """計算 MA5, MA10, MA20 與 MA60"""
+    df['MA5'] = df['Close'].rolling(window=5).mean()
+    df['MA10'] = df['Close'].rolling(window=10).mean()
     df['MA20'] = df['Close'].rolling(window=20).mean()
     df['MA60'] = df['Close'].rolling(window=60).mean()
     return df
@@ -77,6 +79,91 @@ def calculate_bollinger_bands(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def calculate_technical_score(ind: Dict[str, Any]) -> tuple[int, str]:
+    """
+    根據 MA5, MA10, MA20, RSI, MACD, 布林通道, 成交量比率進行綜合評分 (0-100) 與星星信心指數。
+    """
+    score = 0
+    close = ind.get("Close", 0.0)
+    
+    # 1. 均線趨勢 (30分)
+    ma5 = ind.get("MA5")
+    ma10 = ind.get("MA10")
+    ma20 = ind.get("MA20")
+    
+    if ma5 and close > ma5:
+        score += 10
+    if ma10 and close > ma10:
+        score += 10
+    if ma20 and close > ma20:
+        score += 10
+        
+    # 2. RSI 強弱 (20分)
+    rsi = ind.get("RSI")
+    if rsi is not None:
+        if 50 <= rsi <= 70:
+            score += 20  # 強勢偏多
+        elif 30 <= rsi < 50:
+            score += 10  # 弱勢整理
+        elif rsi > 70:
+            score += 5   # 超買區防回檔
+        elif rsi < 30:
+            score += 12  # 超賣區防反彈
+            
+    # 3. MACD 動能 (20分)
+    dif = ind.get("MACD_DIF")
+    dea = ind.get("MACD_DEA")
+    hist = ind.get("MACD_HIST")
+    if dif is not None and dea is not None:
+        if dif > dea:
+            score += 15  # 黃金交叉
+        if hist is not None and hist > 0:
+            score += 5   # 紅柱增長
+            
+    # 4. 布林通道位置 (15分)
+    bb_mid = ind.get("BB_MIDDLE")
+    bb_upper = ind.get("BB_UPPER")
+    bb_lower = ind.get("BB_LOWER")
+    if bb_mid is not None and bb_upper is not None and bb_lower is not None:
+        if close >= bb_upper:
+            score += 5   # 突破上軌
+        elif close <= bb_lower:
+            score += 10  # 跌破下軌
+        elif close > bb_mid:
+            score += 15  # 站穩中軌之上
+        else:
+            score += 5   # 中軌之下
+            
+    # 5. 成交量配合 (15分)
+    ratio = ind.get("Vol_Ratio")
+    if ratio is not None:
+        if ratio >= 2.0:
+            score += 15  # 爆量突破
+        elif ratio >= 1.2:
+            score += 12  # 溫和增量
+        elif ratio >= 0.8:
+            score += 8   # 常態量
+        else:
+            score += 3   # 縮量
+            
+    # 限制分數介於 0 到 100
+    score = max(0, min(100, score))
+    
+    # 轉換成信心指數星星
+    if score >= 85:
+        stars = "★★★★★"
+    elif score >= 70:
+        stars = "★★★★☆"
+    elif score >= 50:
+        stars = "★★★☆☆"
+    elif score >= 35:
+        stars = "★★☆☆☆"
+    else:
+        stars = "★☆☆☆☆"
+        
+    return score, stars
+
+
 def analyze_stock_indicators(df: pd.DataFrame) -> Dict[str, Any]:
     """
     計算股票的所有技術指標，並回傳最新的指標值與狀態描述。
@@ -103,6 +190,8 @@ def analyze_stock_indicators(df: pd.DataFrame) -> Dict[str, Any]:
     # 建立指標狀態報告
     indicators = {
         "Close": float(latest["Close"]),
+        "MA5": float(latest["MA5"]) if not pd.isna(latest["MA5"]) else None,
+        "MA10": float(latest["MA10"]) if not pd.isna(latest["MA10"]) else None,
         "MA20": float(latest["MA20"]) if not pd.isna(latest["MA20"]) else None,
         "MA60": float(latest["MA60"]) if not pd.isna(latest["MA60"]) else None,
         "RSI": float(latest["RSI"]) if not pd.isna(latest["RSI"]) else None,
@@ -119,6 +208,11 @@ def analyze_stock_indicators(df: pd.DataFrame) -> Dict[str, Any]:
         "Vol_MA20": float(latest["Vol_MA20"]) if not pd.isna(latest["Vol_MA20"]) else None,
         "Vol_Ratio": float(latest["Vol_Ratio"]) if not pd.isna(latest["Vol_Ratio"]) else None,
     }
+    
+    # 計算評分與信心指數
+    score, stars = calculate_technical_score(indicators)
+    indicators["score"] = score
+    indicators["stars"] = stars
     
     # 生成簡單的技術面狀態說明
     tech_signals = []
