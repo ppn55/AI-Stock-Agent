@@ -26,10 +26,14 @@ def generate_html_report(
     env = Environment(loader=FileSystemLoader(templates_dir))
     template = env.get_template("email.html")
     
-    # 3. 處理 AI 分析 markdown 為 HTML
+    # 3. 處理 AI 分析 markdown 為 HTML 並清理 .TW / .TWO 後綴避免被郵件軟體自動轉換成超連結
+    import re
+    cleaned_ai_md = re.sub(r'\b(\w+)\.TW\b', r'\1 TW', ai_analysis_md, flags=re.IGNORECASE)
+    cleaned_ai_md = re.sub(r'\b(\w+)\.TWO\b', r'\1 TWO', cleaned_ai_md, flags=re.IGNORECASE)
+    
     # 支援額外的 markdown 擴充功能（如表格、警告方塊等）
     ai_analysis_html = markdown.markdown(
-        ai_analysis_md,
+        cleaned_ai_md,
         extensions=["extra", "admonition", "nl2br"]
     )
     
