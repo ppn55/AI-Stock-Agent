@@ -91,6 +91,12 @@ def analyze_stock_indicators(df: pd.DataFrame) -> Dict[str, Any]:
     df_calc = calculate_kd(df_calc)
     df_calc = calculate_bollinger_bands(df_calc)
     
+    # 計算成交量指標 (yfinance 為原始股數，除以 1000 轉換為台灣市場慣用的「張」)
+    df_calc['Vol_Latest'] = df_calc['Volume'] / 1000.0
+    df_calc['Vol_MA5'] = df_calc['Volume'].rolling(window=5).mean() / 1000.0
+    df_calc['Vol_MA20'] = df_calc['Volume'].rolling(window=20).mean() / 1000.0
+    df_calc['Vol_Ratio'] = df_calc['Vol_Latest'] / df_calc['Vol_MA20']
+    
     # 獲取最新一筆的數據
     latest = df_calc.iloc[-1]
     
@@ -108,6 +114,10 @@ def analyze_stock_indicators(df: pd.DataFrame) -> Dict[str, Any]:
         "BB_MIDDLE": float(latest["BB_MIDDLE"]) if not pd.isna(latest["BB_MIDDLE"]) else None,
         "BB_UPPER": float(latest["BB_UPPER"]) if not pd.isna(latest["BB_UPPER"]) else None,
         "BB_LOWER": float(latest["BB_LOWER"]) if not pd.isna(latest["BB_LOWER"]) else None,
+        "Vol_Latest": float(latest["Vol_Latest"]),
+        "Vol_MA5": float(latest["Vol_MA5"]) if not pd.isna(latest["Vol_MA5"]) else None,
+        "Vol_MA20": float(latest["Vol_MA20"]) if not pd.isna(latest["Vol_MA20"]) else None,
+        "Vol_Ratio": float(latest["Vol_Ratio"]) if not pd.isna(latest["Vol_Ratio"]) else None,
     }
     
     # 生成簡單的技術面狀態說明
@@ -153,6 +163,19 @@ def analyze_stock_indicators(df: pd.DataFrame) -> Dict[str, Any]:
             tech_signals.append("股價跌破布林通道下軌，極度弱勢或存在超跌。")
         else:
             tech_signals.append("股價在布林通道內部震盪整理。")
+            
+    # 成交量關係
+    if indicators["Vol_Ratio"]:
+        ratio = indicators["Vol_Ratio"]
+        vol_latest = indicators["Vol_Latest"]
+        if ratio >= 2.0:
+            tech_signals.append(f"成交量顯著爆量 ({vol_latest:,.0f}張，量比達 {ratio:.1f}倍)，短線動能強勁！")
+        elif ratio >= 1.5:
+            tech_signals.append(f"成交量明顯增量 ({vol_latest:,.0f}張，量比達 {ratio:.1f}倍)，短線有資金流入跡象。")
+        elif ratio <= 0.5:
+            tech_signals.append(f"成交量明顯萎縮 ({vol_latest:,.0f}張，量比僅 {ratio:.1f}倍)，呈現無量盤整。")
+        else:
+            tech_signals.append(f"成交量處於常態水準 ({vol_latest:,.0f}張，量比 {ratio:.1f}倍)。")
             
     indicators["signals"] = tech_signals
     return indicators

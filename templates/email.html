@@ -232,6 +232,7 @@
                             <th>KD 值</th>
                             <th>MACD 狀態</th>
                             <th>布林通道</th>
+                            <th>成交量 (量比)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -287,6 +288,17 @@
                                     <span style="font-size:11px; color:#64748b;">
                                         上: {{ "{:.1f}".format(ind.BB_UPPER) }}<br>
                                         下: {{ "{:.1f}".format(ind.BB_LOWER) }}
+                                    </span>
+                                {% else %}
+                                    --
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if ind.Vol_Latest %}
+                                    <span style="font-size:11px;">
+                                        今日: {{ "{:,.0f}".format(ind.Vol_Latest) }} 張<br>
+                                        20日均: {{ "{:,.0f}".format(ind.Vol_MA20) }} 張<br>
+                                        量比: <span class="{% if ind.Vol_Ratio >= 1.5 %}text-up{% elif ind.Vol_Ratio <= 0.5 %}text-down{% endif %}"><strong>{{ "{:.2f}".format(ind.Vol_Ratio) }} 倍</strong></span>
                                     </span>
                                 {% else %}
                                     --

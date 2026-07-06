@@ -56,6 +56,18 @@ def format_holdings_detail(portfolio_metrics: Dict[str, Any], stock_indicators: 
         bb_lower = ind.get("BB_LOWER")
         bb_lower_str = f"{bb_lower:.2f}" if bb_lower is not None else "無"
         
+        vol_latest = ind.get("Vol_Latest")
+        vol_latest_str = f"{vol_latest:,.0f} 張" if vol_latest is not None else "無"
+        
+        vol_ma5 = ind.get("Vol_MA5")
+        vol_ma5_str = f"{vol_ma5:,.0f} 張" if vol_ma5 is not None else "無"
+        
+        vol_ma20 = ind.get("Vol_MA20")
+        vol_ma20_str = f"{vol_ma20:,.0f} 張" if vol_ma20 is not None else "無"
+        
+        vol_ratio = ind.get("Vol_Ratio")
+        vol_ratio_str = f"{vol_ratio:.2f} 倍" if vol_ratio is not None else "無"
+        
         # 建立個股描述
         detail_lines.append(f"--- 股票: {ticker} ({name}) ---")
         detail_lines.append(f"  - 庫存明細: 持有 {shares:,} 股，買進總成本 {cost:,.0f} 元，目前股價 {price:.2f} 元，當前市值 {market_value:,.0f} 元")
@@ -70,6 +82,7 @@ def format_holdings_detail(portfolio_metrics: Dict[str, Any], stock_indicators: 
         detail_lines.append(f"    * MACD DIF: {macd_dif_str}, DEA: {macd_dea_str}, 柱狀值: {macd_hist_str}")
         detail_lines.append(f"    * KD 指標: K={k_str}, D={d_str}")
         detail_lines.append(f"    * 布林通道: 上軌={bb_upper_str}, 中軌={bb_middle_str}, 下軌={bb_lower_str}")
+        detail_lines.append(f"    * 成交量能: 今日成交量={vol_latest_str}, 5日均量={vol_ma5_str}, 20日均量={vol_ma20_str}, 量比={vol_ratio_str}")
         
         # 技術面狀態說明
         detail_lines.append("  - 系統技術面狀態說明:")
